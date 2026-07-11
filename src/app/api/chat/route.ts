@@ -1,6 +1,7 @@
 import { profile, journey, projects, skillGroups, languages } from "@/lib/data";
 
-const MODEL = "gemini-2.0-flash";
+// gemini-2.0-flash shut down 2026-06-01; 2.5-flash follows 2026-10-16.
+const MODEL = "gemini-3.5-flash";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
