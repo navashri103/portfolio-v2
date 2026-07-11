@@ -1,0 +1,319 @@
+@import "tailwindcss";
+
+/* ── Starlight tokens — deep-space warm palette (no blue/purple/green) ── */
+:root {
+  color-scheme: dark;
+  --background: #080606;
+  --surface: #120e0c;
+  --surface-2: #1c1512;
+  --foreground: #f7f2ea;
+  --muted: #a89c8d;
+  --accent: #ffc46b; /* stardust gold */
+  --accent-2: #e8ddcc; /* moon silver */
+  --accent-3: #ff8a5c; /* ember */
+  --line: rgba(247, 242, 234, 0.1);
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 180ms;
+  --dur-base: 300ms;
+  --dur-slow: 700ms;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-accent-3: var(--accent-3);
+  --color-line: var(--line);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-syne);
+}
+
+* {
+  border-color: var(--line);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  overflow-x: clip;
+}
+
+::selection {
+  background: var(--accent);
+  color: #1c1205;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--surface-2);
+  border: 2px solid var(--background);
+  border-radius: 8px;
+}
+
+/* ── Accessibility ──────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.skip-link {
+  position: fixed;
+  top: -100%;
+  left: 1rem;
+  z-index: 200;
+  padding: 0.75rem 1.25rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #1c1205;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: top var(--dur-base) var(--ease-out-expo);
+}
+.skip-link:focus-visible {
+  top: 1rem;
+}
+
+/* ── Typography helpers ─────────────────────────────────────── */
+.font-display {
+  font-family: var(--font-syne), var(--font-sans), sans-serif;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.gradient-text {
+  background: linear-gradient(105deg, var(--accent) 0%, #fff3dd 45%, var(--accent-3) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Giant hollow section indices */
+.text-outline {
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(247, 242, 234, 0.16);
+}
+
+/* ── Surfaces & effects ─────────────────────────────────────── */
+.glass {
+  background: rgba(255, 250, 240, 0.05);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(247, 242, 234, 0.14);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.glass-deep {
+  background: rgba(255, 250, 240, 0.04);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(247, 242, 234, 0.15);
+  box-shadow:
+    0 12px 48px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(247, 242, 234, 0.1);
+}
+
+.noise-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 80;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.spotlight-card {
+  position: relative;
+  isolation: isolate;
+}
+/* Sits above the card background but below all children. */
+.spotlight-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at var(--mx, 50%) var(--my, 50%),
+    rgba(255, 196, 107, 0.14),
+    rgba(255, 138, 92, 0.07) 40%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+  z-index: -1;
+}
+.spotlight-card:hover::before {
+  opacity: 1;
+}
+
+/* Constellation stars inside cards: drift with the cursor via --dx/--dy */
+.parallax-star {
+  transition: transform 0.25s var(--ease-out-expo);
+  will-change: transform;
+}
+.parallax-1 {
+  transform: translate(calc(var(--dx, 0px) * 0.05), calc(var(--dy, 0px) * 0.05));
+}
+.parallax-2 {
+  transform: translate(calc(var(--dx, 0px) * -0.08), calc(var(--dy, 0px) * -0.08));
+}
+.parallax-3 {
+  transform: translate(calc(var(--dx, 0px) * 0.12), calc(var(--dy, 0px) * 0.12));
+}
+
+/* ── Nebula field (warm) ────────────────────────────────────── */
+@keyframes aurora-a {
+  0%,
+  100% {
+    transform: translate3d(-8%, -4%, 0) rotate(0deg) scale(1);
+  }
+  50% {
+    transform: translate3d(10%, 8%, 0) rotate(18deg) scale(1.15);
+  }
+}
+@keyframes aurora-b {
+  0%,
+  100% {
+    transform: translate3d(6%, 4%, 0) rotate(0deg) scale(1.05);
+  }
+  50% {
+    transform: translate3d(-10%, -6%, 0) rotate(-14deg) scale(0.92);
+  }
+}
+@keyframes aurora-c {
+  0%,
+  100% {
+    transform: translate3d(0, 6%, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(4%, -8%, 0) scale(1.12);
+  }
+}
+
+.aurora-a {
+  animation: aurora-a 26s ease-in-out infinite;
+  will-change: transform;
+}
+.aurora-b {
+  animation: aurora-b 32s ease-in-out infinite;
+  will-change: transform;
+}
+.aurora-c {
+  animation: aurora-c 22s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* ── Cursor star sparkles ───────────────────────────────────── */
+@keyframes sparkle-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0) rotate(0deg);
+  }
+  30% {
+    opacity: 1;
+    transform: translate(-50%, -60%) scale(1) rotate(60deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -150%) scale(0.1) rotate(160deg);
+  }
+}
+.sparkle {
+  position: fixed;
+  pointer-events: none;
+  z-index: 118;
+  animation: sparkle-pop 0.85s ease-out forwards;
+}
+
+/* ── Marquee ────────────────────────────────────────────────── */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.animate-marquee {
+  animation: marquee 32s linear infinite;
+  will-change: transform;
+}
+.marquee-mask {
+  mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
+}
+
+/* ── Misc animation ─────────────────────────────────────────── */
+@keyframes logoPulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 2px rgba(255, 196, 107, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 9px rgba(255, 138, 92, 0.6));
+  }
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 196, 107, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(255, 196, 107, 0);
+  }
+}
+.pulse-dot {
+  animation: pulse-dot 2.4s ease-out infinite;
+}
+
+@keyframes scroll-wheel {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  70% {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+}
+.scroll-wheel {
+  animation: scroll-wheel 1.8s ease-in-out infinite;
+}
+
+/* ── Reduced motion: kill it all, keep content ──────────────── */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
