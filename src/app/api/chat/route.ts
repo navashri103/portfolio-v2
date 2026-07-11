@@ -1,7 +1,14 @@
 import { profile, journey, projects, skillGroups, languages } from "@/lib/data";
 
-// gemini-2.0-flash shut down 2026-06-01; 2.5-flash follows 2026-10-16.
-const MODEL = "gemini-3.5-flash";
+// Google retires and re-quotas Gemini models often (2.0-flash died
+// 2026-06-01). Try these in order: 404 means the id is gone, 429 means
+// this project has no free quota left on that model — move to the next.
+const MODELS = [
+  "gemini-3.5-flash",
+  "gemini-3.1-flash-lite",
+  "gemini-2.5-flash",
+  "gemini-2.5-flash-lite",
+];
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
@@ -70,51 +77,59 @@ export async function POST(req: Request) {
     content: String(m.content).slice(0, 2000),
   }));
 
+  const payload = JSON.stringify({
+    system_instruction: {
+      parts: {
+        text: buildSystemPrompt(),
+      },
+    },
+    contents: trimmedHistory.map((m) => ({
+      role: m.role === "user" ? "user" : "model",
+      parts: [{ text: m.content }],
+    })),
+    generationConfig: {
+      temperature: 0.7,
+      maxOutputTokens: 500,
+    },
+  });
+
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          system_instruction: {
-            parts: {
-              text: buildSystemPrompt(),
-            },
+    let lastStatus = 0;
+    let lastError = "";
+
+    for (const model of MODELS) {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-          contents: trimmedHistory.map((m) => ({
-            role: m.role === "user" ? "user" : "model",
-            parts: [{ text: m.content }],
-          })),
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 500,
-          },
-        }),
+          body: payload,
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const reply: string | undefined =
+          data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (reply) return Response.json({ reply });
+        lastStatus = 502;
+        lastError = "Gemini returned an empty response.";
+        continue;
       }
-    );
 
-    if (!response.ok) {
-      const errText = await response.text();
-      return Response.json(
-        { error: `Gemini request failed (${response.status}): ${errText.slice(0, 300)}` },
-        { status: 502 },
-      );
+      lastStatus = response.status;
+      lastError = (await response.text()).slice(0, 300);
+      // Retired id, exhausted quota, or overload — the next model may work.
+      if (![404, 429, 503].includes(response.status)) break;
     }
 
-    const data = await response.json();
-    const reply: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!reply) {
-      return Response.json(
-        { error: "Gemini returned an empty response." },
-        { status: 502 },
-      );
-    }
-
-    return Response.json({ reply });
+    const friendly =
+      lastStatus === 429
+        ? "I'm getting lots of questions right now ☕ — try again in a minute, or just email me!"
+        : `Gemini request failed (${lastStatus}): ${lastError}`;
+    return Response.json({ error: friendly }, { status: 502 });
   } catch (err) {
     console.error("Gemini request error:", err);
     return Response.json(
